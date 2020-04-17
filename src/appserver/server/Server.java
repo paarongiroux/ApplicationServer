@@ -24,18 +24,46 @@ public class Server {
     static ServerSocket serverSocket = null;
 
     public Server(String serverPropertiesFile) {
-
+        int port;
+        
         // create satellite manager and load manager
         // ...
+        satelliteManager = new SatelliteManager();
+        System.out.println("[Server] set up SatelliteManager");
+        
+        loadManager = new LoadManager();
+        System.out.println("[Server] set up LoadManager");
         
         // read server properties and create server socket
-        // ...
+        try
+        {
+            PropertyHandler appServerProps = new PropertyHandler(serverPropertiesFile);
+            port = Integer.parseInt(appServerProps.getProperty("PORT"));
+            serverSocket = new ServerSocket(port);
+            System.out.println("[Server] successfully set up ServerSocket.");
+        }    
+        catch(IOException e)
+        {
+            System.err.println(e);
+        }
     }
 
     public void run() {
     // serve clients in server loop ...
     // when a request comes in, a ServerThread object is spawned
     // ...
+        while(true)
+        {
+            try
+            {
+                Socket socket = serverSocket.accept();
+                (new ServerThread(socket)).start();
+            }
+            catch(IOException e)
+            {
+                System.err.println(e);
+            }
+        }
     }
 
     // objects of this helper class communicate with satellites or clients
@@ -52,24 +80,37 @@ public class Server {
 
         @Override
         public void run() {
+            String satelliteName;
+            ConnectivityInfo satelliteInfo;
             // set up object streams and read message
-            // ...
+            System.out.println("[Server] starting new thread...");
+            try
+            {
+                writeToNet = new ObjectOutputStream(client.getOutputStream());
+                readFromNet = new ObjectInputStream(client.getInputStream());
+            }
+            catch(IOException e)
+            {
+                System.err.println(e);
+            }  
 
             
             // process message
             switch (message.getType()) {
                 case REGISTER_SATELLITE:
                     // read satellite info
-                    // ...
+                    satelliteInfo = (ConnectivityInfo) message.getContent();
+                    satelliteName = satelliteInfo.getName();
+                    System.out.println("[ServerThread.run] Registering satellite " + satelliteName);
                     
                     // register satellite
                     synchronized (Server.satelliteManager) {
-                        // ...
+                        Server.satelliteManager.registerSatellite(satelliteInfo);
                     }
 
                     // add satellite to loadManager
                     synchronized (Server.loadManager) {
-                        // ...
+                        Server.loadManager.satelliteAdded(satelliteName);
                     }
 
                     break;
@@ -77,24 +118,46 @@ public class Server {
                 case JOB_REQUEST:
                     System.err.println("\n[ServerThread.run] Received job request");
 
-                    String satelliteName = null;
+                    satelliteName = null;
                     synchronized (Server.loadManager) {
                         // get next satellite from load manager
-                        // ...
+                        try
+                        {
+                            satelliteName = Server.loadManager.nextSatellite();
+                        }
+                        catch(Exception e)
+                        {
+                            System.out.println(e);
+                        }
                         
                         // get connectivity info for next satellite from satellite manager
-                        // ...
+                        satelliteInfo = Server.satelliteManager.getSatelliteForName(satelliteName);
                     }
 
                     Socket satellite = null;
+                    
                     // connect to satellite
-                    // ...
-
-                    // open object streams,
-                    // forward message (as is) to satellite,
-                    // receive result from satellite and
-                    // write result back to client
-                    // ...
+                    try
+                    {
+                        satellite = new Socket(satelliteInfo.getHost(), satelliteInfo.getPort());
+                        
+                        // open object streams,
+                        ObjectOutputStream writeToSat = new ObjectOutputStream(satellite.getOutputStream());
+                        ObjectInputStream readFromSat = new ObjectInputStream(satellite.getInputStream());
+                        
+                        // forward message (as is) to satellite,
+                        writeToSat.writeObject(message);
+                        
+                        // receive result from satellite and
+                        Object result = readFromSat.readObject();
+                        
+                        // write result back to client
+                        writeToNet.writeObject(result);
+                    }
+                    catch(IOException | ClassNotFoundException e)
+                    {
+                        System.out.println(e);
+                    }
 
                     break;
 

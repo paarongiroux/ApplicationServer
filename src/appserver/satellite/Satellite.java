@@ -92,7 +92,19 @@ public class Satellite extends Thread {
 
         // register this satellite with the SatelliteManager on the server
         // ---------------------------------------------------------------
-        // ...
+        
+        Message registerMessage = new Message(REGISTER_SATELLITE, satelliteInfo);
+        try
+        {
+            Socket server = new Socket(serverInfo.getHost(), serverInfo.getPort());
+            ObjectOutputStream toServer = new ObjectOutputStream(server.getOutputStream());
+            System.out.println("[Satellite.run] registering satellite with server");
+            toServer.writeObject(registerMessage);
+        }
+        catch(IOException e)
+        {
+            System.err.println(e);
+        }
         
         
         // create server socket
