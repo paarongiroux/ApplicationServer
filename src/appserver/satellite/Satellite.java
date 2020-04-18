@@ -212,11 +212,7 @@ public class Satellite extends Thread {
             // put the tool into the toolsCache for future re-use
             toolsCache.put(toolClassString, toolObject);
         }
-        else
-        {
-            // tool was already in cache. print to console.
-            System.out.println("Tool: \"" + toolClassString + "\" already in Cache");
-        }
+        
         // return the Tool object
         return toolObject;
     }

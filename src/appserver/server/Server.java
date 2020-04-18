@@ -95,6 +95,16 @@ public class Server {
             }  
 
             
+            // read initial registration message
+            try
+            {
+                message = (Message) readFromNet.readObject();
+            }
+            catch(IOException | ClassNotFoundException e)
+            {
+                System.err.println(e);
+            }
+            
             // process message
             switch (message.getType()) {
                 case REGISTER_SATELLITE:
@@ -139,6 +149,7 @@ public class Server {
                     // connect to satellite
                     try
                     {
+                        System.out.println("[Sever.run] Running job with satellite: " + satelliteInfo.getName());
                         satellite = new Socket(satelliteInfo.getHost(), satelliteInfo.getPort());
                         
                         // open object streams,

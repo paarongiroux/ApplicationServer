@@ -8,7 +8,7 @@ import java.util.ArrayList;
  */
 public class LoadManager {
 
-    static ArrayList satellites = null;
+    static ArrayList<String> satellites = null;
     static int lastSatelliteIndex = -1;
 
     public LoadManager() {
@@ -23,13 +23,19 @@ public class LoadManager {
 
     public String nextSatellite() throws Exception {
         
-        int numberSatellites;
+        int numberSatellites = satellites.size();
         
         synchronized (satellites) {
-            // implement policy that returns the satellite name according to a round robin methodology
-            // ...
+            // increment last Satellite Index to get the next satellite.
+            lastSatelliteIndex ++;
+            // if lastSatelliteIndex is over the arrayList size, reset to zero.
+            if (lastSatelliteIndex >= numberSatellites)
+            {
+                lastSatelliteIndex = 0;
+            }
         }
-
-        return "";// ... name of satellite who is supposed to take job
+        
+        // return string at the current index.
+        return satellites.get(lastSatelliteIndex);
     }
 }
