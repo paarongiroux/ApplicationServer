@@ -47,7 +47,8 @@ public class Satellite extends Thread {
         }
         catch(IOException e)
         {
-            System.err.println(e);
+            System.err.println("Error in obtaining satellite propertie");
+            System.exit(1);
         }
 
 
@@ -63,7 +64,9 @@ public class Satellite extends Thread {
         }
         catch(IOException e)
         {
-            System.err.println(e);
+            System.err.println("Error in obtaining server propertie");
+            System.exit(1);
+
         }
 
         // read properties of the code server and create class loader
@@ -76,11 +79,17 @@ public class Satellite extends Thread {
             int port = Integer.parseInt(classLoaderProps.getProperty("PORT"));
             classLoader = new HTTPClassLoader(host, port);
             System.out.println("[Satellite] successfully set up class loader.");
-            // doesn't currently do anything with the docroot
+
         }
         catch(IOException e)
         {
             System.err.println(e);
+        }
+
+        if (classLoader == null) {
+            // The property file could not be read
+            System.err.println("Cannot create HTTPClassLoader");
+            System.exit(1);
         }
 
 
@@ -96,7 +105,6 @@ public class Satellite extends Thread {
 
         // register this satellite with the SatelliteManager on the server
         // ---------------------------------------------------------------
-
 
         Message registerMessage = new Message(REGISTER_SATELLITE, satelliteInfo);
         try
